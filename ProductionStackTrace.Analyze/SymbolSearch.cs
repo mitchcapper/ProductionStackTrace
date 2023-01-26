@@ -1,4 +1,4 @@
-﻿using Microsoft.Diagnostics.Symbols;
+using Microsoft.Diagnostics.Symbols;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -63,6 +63,7 @@ namespace ProductionStackTrace.Analyze {
 
 			var filePath = new StringBuilder(256);
 			var guidHandle = GCHandle.Alloc(guid, GCHandleType.Pinned);
+			(bool matched, string err) lastRes=(false,null);
 			try {
 				if (!DbgHelp.SymFindFileInPath(hProcess, null, pdbFileName,
 					guidHandle.AddrOfPinnedObject(), (uint)age, 0,
@@ -70,7 +71,8 @@ namespace ProductionStackTrace.Analyze {
 					return null;
 
 				var found_path = filePath.ToString();
-				if (!VerifySymbolFileMatch(found_path, guid, age))
+				var matchRes = VerifySymbolFileMatch(found_path, guid, age);
+				if (matchRes.matched!)
 					return null;
 
 				Debug.WriteLine($"found correct symbol file at: {found_path}");
@@ -80,13 +82,12 @@ namespace ProductionStackTrace.Analyze {
 				DbgHelp.SymCleanup(hProcess);
 			}
 		}
-		public bool VerifySymbolFileMatch(String path, Guid guid, int age) {
+		public (bool matched, string err) VerifySymbolFileMatch(String path, Guid guid, int age) {
 			var info = ExtractInfoFromPDB(path);
 			if (!info.guid.Equals(guid) || info.age != age) {
-				Debug.WriteLine($"for symbol file {path} it did NOT find the right version searching for guid: {guid} age: {age} found guid: {info.guid} age: {info.age}, not returning symbol file");
-				return false;
+				return (false, $"for symbol file {path} it did NOT find the right version searching for guid: {guid} age: {age} found guid: {info.guid} age: {info.age}, not returning symbol file (might be wrong .net version)");
 			} else
-				return true;
+				return (true,"");
 		}
 		public string AltFindPdbFile(ExceptionReportInterpreter.AssemblyMappedInfo info) {
 			var qualified_path = $@"{info.PdbName}\{info.PdbGuid.ToString().ToUpper().Replace("-", "")}{info.PdbAge}\{info.PdbName}";
@@ -114,19 +115,27 @@ namespace ProductionStackTrace.Analyze {
 					local_nuget = Path.Combine(path.Target, $"{info.AssemblyName}.{version_without_end_zeros}.symbols.nupkg");
 				if (!File.Exists(local_nuget))
 					return null;
+				(bool matched, string err) lastRes = (true, null);
 				using (ZipArchive archive = ZipFile.OpenRead(local_nuget)) {
 					foreach (ZipArchiveEntry entry in archive.Entries) {
 						if (entry.Name.Equals(info.PdbName, StringComparison.OrdinalIgnoreCase)) {
 							var target_file_info = new FileInfo(full_qualified_path);
 							if (!target_file_info.Directory.Exists)
 								target_file_info.Directory.Create();
-							entry.ExtractToFile(target_file_info.FullName, false);
-							if (!VerifySymbolFileMatch(target_file_info.FullName, info.PdbGuid, info.PdbAge))
-								throw new Exception("Not sure why the verison matches but symbol file GUID/age does not");
-							return target_file_info.FullName;
+							var tmp_file = target_file_info.FullName + ".tmp";
+							entry.ExtractToFile(tmp_file, false);
+							lastRes = VerifySymbolFileMatch(tmp_file, info.PdbGuid, info.PdbAge);
+							if (lastRes.matched) {
+								File.Move(tmp_file, target_file_info.FullName);
+								return target_file_info.FullName;
+							} else
+								File.Delete(tmp_file);
 						}
 					}
 				}
+				if (! lastRes.matched)
+					throw new Exception($"Not sure why the verison matches but symbol file GUID/age does not last result was: {lastRes.err}");
+
 				Debug.WriteLine($"looking at: {qualified_path}");
 			}
 			return null;
@@ -141,7 +150,7 @@ namespace ProductionStackTrace.Analyze {
 			src.loadDataFromPdb(pdb_path);
 			Dia2Lib.IDiaSession _session;
 			src.openSession(out _session);
-
+			
 			return (_session.globalScope.guid, _session.globalScope.age);
 		}
 
