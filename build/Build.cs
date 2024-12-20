@@ -13,6 +13,9 @@ using Nuke.Common.Git;
 using Nuke.Common.Tools.DotNet;
 using System.Collections.Generic;
 using static Nuke.Common.IO.AbsolutePathExtensions;
+using System.Diagnostics;
+using Nuke.Common.Utilities.Collections;
+using System.Runtime.CompilerServices;
 
 
 [GitHubActions(
@@ -22,7 +25,7 @@ using static Nuke.Common.IO.AbsolutePathExtensions;
 	OnPushBranchesIgnore = new[] { "trash" },
 	//OnPushBranchesIgnore = new[] { MasterBranch, ReleaseBranchPrefix + "/*" },
 	Submodules = GitHubActionsSubmodules.Recursive,
-
+	FetchDepth = 0,
 	PublishArtifacts = true,
 	InvokedTargets = new[] { nameof(Pack) }
 )]
@@ -42,12 +45,9 @@ class Build : NukeBuild {
 		Serilog.Log.Information("IsLocalBuild           : {0}", IsLocalBuild.ToString());
 
 		Serilog.Log.Information("Informational   Version: {0}", InformationalVersion);
-		Serilog.Log.Information("SemVer          Version: {0}", SemVer);
-		Serilog.Log.Information("AssemblySemVer  Version: {0}", AssemblySemVer);
+		Serilog.Log.Information("Assembl Version  Version: {0}", Version);
 
 	}
-	const string MasterBranch = "master";
-	const string ReleaseBranchPrefix = "tags";
 	[GitRepository] GitRepository GitRepository;
 	[GitVersion(NoFetch = true, NoCache = true)] readonly GitVersion GitVersion;
 	[Solution(GenerateProjects = true)] readonly Solution Solution = null!;
@@ -56,8 +56,8 @@ class Build : NukeBuild {
 
 	[Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
 	readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
-	string AssemblySemVer => GitVersion?.AssemblySemVer ?? "1.0.0";
-	string SemVer => GitVersion?.SemVer ?? "1.0.0";
+	string Version => _version ??= Solution.ProductionStackTraceStd.GetProperty("Version")+ "." + GitVersion.CommitsSinceVersionSource;
+	string _version;
 	string InformationalVersion => GitVersion?.InformationalVersion ?? "1.0.0";
 	private IReadOnlyCollection<Output> OurMSBuild(Func<MSBuildSettings, MSBuildSettings> action, Project ScopeToSpecificProject = null) {
 		var toolsPath = MSBuildToolPathResolver.Resolve(MSBuildVersion.VS2022, MSBuildPlatform.x64);
@@ -106,7 +106,7 @@ class Build : NukeBuild {
 				context.Information($"Starting build of: {proj.Name}");
 				OurMSBuild(s => s
 				.SetTargets("Build")
-				.SetAssemblyVersion(AssemblySemVer)
+				.SetAssemblyVersion(Version)
 				.SetOutDir(OutDir)
 				.SetInformationalVersion(InformationalVersion), proj
 				);
@@ -117,12 +117,10 @@ class Build : NukeBuild {
 	.DependsOn(Compile)
 	.Produces(OutputDirectory)
 		.Executes(() => {
-
-
 			DotNetPack(_ => _
 					.SetProject(Solution.ProductionStackTraceStd)
 					.SetOutputDirectory(OutputDirectory / "nuget")
-					.SetVersion(SemVer)
+					.SetVersion(Version)
 
 
 					);
