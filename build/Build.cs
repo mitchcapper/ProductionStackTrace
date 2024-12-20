@@ -1,26 +1,19 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using Nuke.Common;
 using Nuke.Common.CI;
 using Nuke.Common.CI.GitHubActions;
-using Nuke.Common.Execution;
-using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
-using Nuke.Common.Tools.Git;
-using Nuke.Common.Tools.GitVersion;
-using Nuke.Common.Tools.MSBuild;
-
-using Nuke.Common.Utilities.Collections;
-using static Nuke.Common.EnvironmentInfo;
-using static Nuke.Common.IO.FileSystemTasks;
-using static Nuke.Common.IO.PathConstruction;
-
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
+using Nuke.Common.Tools.MSBuild;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using Nuke.Common.Tools.GitVersion;
+using Nuke.Common.Git;
 using Nuke.Common.Tools.DotNet;
+using System.Collections.Generic;
+using static Nuke.Common.IO.AbsolutePathExtensions;
+
 
 [GitHubActions(
 	"continuous",
@@ -29,7 +22,7 @@ using Nuke.Common.Tools.DotNet;
 	OnPushBranchesIgnore = new[] { "trash" },
 	//OnPushBranchesIgnore = new[] { MasterBranch, ReleaseBranchPrefix + "/*" },
 	Submodules = GitHubActionsSubmodules.Recursive,
-	
+
 	PublishArtifacts = true,
 	InvokedTargets = new[] { nameof(Pack) }
 )]
@@ -41,20 +34,6 @@ class Build : NukeBuild {
 	///   - Microsoft VSCode           https://nuke.build/vscode
 
 	public static int Main() => Execute<Build>(x => x.Compile);
-
-	[Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
-	readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
-
-	Target Clean => _ => _
-		.Before(Restore)
-		.Executes(() => {
-			EnsureCleanDirectory(OutputDirectory);
-		});
-
-	Target Restore => _ => _
-		.Executes(() => {
-			OurMSBuild(s => s.SetRestore(true).SetTargets("restore"));
-		});
 	protected override void OnBuildInitialized() {
 
 		base.OnBuildInitialized();
@@ -71,13 +50,15 @@ class Build : NukeBuild {
 	const string ReleaseBranchPrefix = "tags";
 	[GitRepository] GitRepository GitRepository;
 	[GitVersion(NoFetch = true, NoCache = true)] readonly GitVersion GitVersion;
+	[Solution(GenerateProjects = true)] readonly Solution Solution = null!;
+	AbsolutePath OutputDirectory => RootDirectory / "final";
+	[CI] readonly GitHubActions GitHubActions;
+
+	[Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
+	readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 	string AssemblySemVer => GitVersion?.AssemblySemVer ?? "1.0.0";
 	string SemVer => GitVersion?.SemVer ?? "1.0.0";
 	string InformationalVersion => GitVersion?.InformationalVersion ?? "1.0.0";
-
-	[CI] readonly GitHubActions GitHubActions;
-	[Solution(GenerateProjects = true)] readonly Solution Solution = null!;
-	AbsolutePath OutputDirectory => RootDirectory / "final";
 	private IReadOnlyCollection<Output> OurMSBuild(Func<MSBuildSettings, MSBuildSettings> action, Project ScopeToSpecificProject = null) {
 		var toolsPath = MSBuildToolPathResolver.Resolve(MSBuildVersion.VS2022, MSBuildPlatform.x64);
 
@@ -95,10 +76,28 @@ class Build : NukeBuild {
 		s = action(s);
 		return MSBuild(s);
 	}
+
+
+	Target Clean => _ => _
+		.Before(Restore)
+		.Executes(() => {
+			OutputDirectory.CreateOrCleanDirectory();
+		});
+
+	Target Restore => _ => _
+		.Executes(() => {
+			OurMSBuild(s => s.SetRestore(true).SetTargets("restore"));
+		});
+
+	//Target Compile => _ => _
+	//    .DependsOn(Restore)
+	//    .Executes(() =>
+	//    {
+	//    });
 	Target Compile => _ => _
 		.DependsOn(Restore)
 		.Executes(() => {
-			EnsureCleanDirectory(OutputDirectory);
+			OutputDirectory.CreateOrCleanDirectory();
 
 			var toBuild = new[] { Solution.ProductionStackTrace, Solution.ProductionStackTraceStd, Solution.ProductionStackTrace_Analyze, Solution.ProductionStackTrace_Analyze_Console };
 			foreach (var proj in toBuild) {
@@ -120,15 +119,15 @@ class Build : NukeBuild {
 		.Executes(() => {
 
 
-		DotNetPack(_ => _
-				.SetProject(Solution.ProductionStackTraceStd)
-				.SetOutputDirectory(OutputDirectory / "nuget")
-				.SetVersion(SemVer)
-				
+			DotNetPack(_ => _
+					.SetProject(Solution.ProductionStackTraceStd)
+					.SetOutputDirectory(OutputDirectory / "nuget")
+					.SetVersion(SemVer)
 
-				);
 
-		  
+					);
+
+
 
 
 
