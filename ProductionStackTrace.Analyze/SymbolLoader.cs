@@ -2,15 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Dia2Lib;
 using System.Reflection.Metadata;
-using Microsoft.DiaSymReader;
-
-using Microsoft.Diagnostics.Symbols;
-using System.Reflection.PortableExecutable;
 using System.Reflection.Metadata.Ecma335;
 using System.Linq;
 
@@ -43,7 +38,7 @@ namespace ProductionStackTrace.Analyze {
 			//{
 			var loader = new SymbolLoader();
 			try {
-				
+
 				loader._source = CoCreateDiaSource();
 				loader._source.loadDataFromPdb(filePath);
 			} catch (COMException e) {
@@ -52,21 +47,6 @@ namespace ProductionStackTrace.Analyze {
 					loader._sourceMR = MetadataReaderProvider.FromPortablePdbStream(strm).GetMetadataReader();
 					return loader;
 				}
-				//var metadataProvider = new SymMetadataProvider(peStream);
-				//var path = @"C:\temp\sym\NovaLib.TextUtilsStd.pdb\04A093952079443BBE6EF0C0455B63431";
-				//var reader = new PEReader(new FileStream(Path.Combine(path, "NovaLib.TextUtilsStd.dll"), FileMode.Open));
-				//reader.TryOpenAssociatedPortablePdb(Path.Combine(path, "NovaLib.TextUtilsStd.dll"),PdbStreamRed, out var newReader, out var pdbPath);
-				//var mreader = newReader.GetMetadataReader();
-				//var mrp = MetadataReaderProvider.FromPortablePdbStream(new FileStream(Path.Combine(path, "NovaLib.TextUtilsStd.pdb"), FileMode.Open));
-				//mrp.GetMetadataReader();
-
-
-					//mreader.
-					//(ISymUnmanagedReader5)new SymBinder().GetReaderFromStream(
-					//	pdbStream,
-					//	SymUnmanagedReaderFactory.CreateSymReaderMetadataImport(metadataProvider));
-					//var metadataProvider = new SymMetadataProvider();
-
 
 				if (e.HResult == unchecked((int)0x806D000C))
 					throw new Exception($"COMException: {e.Message} pdb file: {filePath} is in an invalid format, maybe your msdiag is out of date (or not registered, if only portable pdbs have been attempted), its a corrupt pdb (or portable pdb) or it is not meant for this system, pdb guid: {GetPDBGUID(filePath)}");
@@ -108,7 +88,7 @@ namespace ProductionStackTrace.Analyze {
 				}
 			}
 		}
-		private static readonly Dictionary<Guid, string> s_msdiaGuids = new (){
+		private static readonly Dictionary<Guid, string> s_msdiaGuids = new(){
 
 			{ new Guid("E6756135-1E65-4D17-8576-610761398C3C"), "VS 2017/19/22 (msdia140.dll)" }, // VS 2017/19 (msdia140.dll)
             {new Guid("3BFCEA48-620F-4B6B-81F7-B9AF75454C7D"), "VS 2013 (msdia120.dll)"}, // VS 2013 (msdia120.dll)
@@ -125,7 +105,7 @@ namespace ProductionStackTrace.Analyze {
 		/// </summary>
 		/// <returns></returns>
 		private static IDiaDataSource CoCreateDiaSource() {
-			foreach (var msDiagVer in s_msdiaGuids) { 
+			foreach (var msDiagVer in s_msdiaGuids) {
 				try {
 
 
@@ -196,41 +176,28 @@ namespace ProductionStackTrace.Analyze {
 
 			foreach (IDiaLineNumber ln in lineNumbers) {
 				var sourceFile = ln.sourceFile;
-				//DebugWriteLineNumber($"official isFIrst: {firstTry}", rvaMethod);
-				if (ln.lineNumber == 0xF00F00 || ln.lineNumber == 0xFEEFEE) { //justMycode markers try offset to get proper line
+				if (ln.lineNumber == 0xF00F00 || ln.lineNumber == 0xFEEFEE)  //justMycode markers try offset to get proper line
 					return GetSourceLoc(methodMetadataToken, ilOffset + 32, false);
-					//if (methodMetadataToken == 0x06000019) {
-
-					//	//for (uint x = 3500; x < 9000; x+=50) {
-					//	for (uint x = rvaMethod; x < rvaMethod + 200; x += 1) {
-					//		DebugWriteLineNumber("", x);
-					//		//DebugWriteLineNumber("", rvaMethod - x);
-
-					//	}
-
-					}
-					return new SourceLocation() { LineNumber = ln.lineNumber, SourceFile = (sourceFile == null) ? null : sourceFile.fileName };
-				}
-
-				return null;
+				return new SourceLocation() { LineNumber = ln.lineNumber, SourceFile = (sourceFile == null) ? null : sourceFile.fileName };
 			}
 
+			return null;
+		}
+
 		private SourceLocation GetSourceLocByMetadataReader(int methodMetadataToken, int ilOffset) {
-			//_sourceMR.TryGetMethod
-			//MethodId.FromToken();
 			var handle = MetadataTokens.Handle(methodMetadataToken);
 			var debugInfo = _sourceMR.GetMethodDebugInformation(((MethodDefinitionHandle)handle).ToDebugInformationHandle());
-			var line = debugInfo.GetSequencePoints().Where(a=>a.IsHidden==false && a.Offset <= ilOffset).OrderByDescending(a=>a.Offset).FirstOrDefault();
-			return new SourceLocation {LineNumber=line.StartLine,SourceFile= _sourceMR.GetString( _sourceMR.GetDocument( debugInfo.Document).Name) };
+			var line = debugInfo.GetSequencePoints().Where(a => a.IsHidden == false && a.Offset <= ilOffset).OrderByDescending(a => a.Offset).FirstOrDefault();
+			return new SourceLocation { LineNumber = line.StartLine, SourceFile = _sourceMR.GetString(_sourceMR.GetDocument(debugInfo.Document).Name) };
 
 
 		}
 
 		private void DebugWriteLineNumber(String what, uint rva) {
-				IDiaEnumLineNumbers lineNumbers;
-				_session.findLinesByRVA(rva, 1, out lineNumbers);
-				foreach (IDiaLineNumber ln in lineNumbers)
-					Debug.WriteLine($"{what} at {rva} For: {what} at {ln.lineNumber} -- {ln.sourceFile}");
-			}
+			IDiaEnumLineNumbers lineNumbers;
+			_session.findLinesByRVA(rva, 1, out lineNumbers);
+			foreach (IDiaLineNumber ln in lineNumbers)
+				Debug.WriteLine($"{what} at {rva} For: {what} at {ln.lineNumber} -- {ln.sourceFile}");
 		}
 	}
+}

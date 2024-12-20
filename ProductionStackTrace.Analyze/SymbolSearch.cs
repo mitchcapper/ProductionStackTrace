@@ -1,10 +1,8 @@
 using Microsoft.Diagnostics.Symbols;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -63,7 +61,6 @@ namespace ProductionStackTrace.Analyze {
 
 			var filePath = new StringBuilder(256);
 			var guidHandle = GCHandle.Alloc(guid, GCHandleType.Pinned);
-			(bool matched, string err) lastRes=(false,null);
 			try {
 				if (!DbgHelp.SymFindFileInPath(hProcess, null, pdbFileName,
 					guidHandle.AddrOfPinnedObject(), (uint)age, 0,
@@ -87,7 +84,7 @@ namespace ProductionStackTrace.Analyze {
 			if (!info.guid.Equals(guid) || info.age != age) {
 				return (false, $"for symbol file {path} it did NOT find the right version searching for guid: {guid} age: {age} found guid: {info.guid} age: {info.age}, not returning symbol file (might be wrong .net version)");
 			} else
-				return (true,"");
+				return (true, "");
 		}
 		public string AltFindPdbFile(ExceptionReportInterpreter.AssemblyMappedInfo info) {
 			var qualified_path = $@"{info.PdbName}\{info.PdbGuid.ToString().ToUpper().Replace("-", "")}{info.PdbAge}\{info.PdbName}";
@@ -133,7 +130,7 @@ namespace ProductionStackTrace.Analyze {
 						}
 					}
 				}
-				if (! lastRes.matched)
+				if (!lastRes.matched)
 					throw new Exception($"Not sure why the verison matches but symbol file GUID/age does not last result was: {lastRes.err}");
 
 				Debug.WriteLine($"looking at: {qualified_path}");
@@ -141,16 +138,16 @@ namespace ProductionStackTrace.Analyze {
 			return null;
 		}
 		private (Guid guid, uint age) ExtractInfoFromPDB(String pdb_path) {//no better ways that actually work it seems
-			Dia2Lib.IDiaDataSource src =null;
+			Dia2Lib.IDiaDataSource src = null;
 			try {
 				src = new Dia2Lib.DiaSource();
-			}catch (FileNotFoundException) {
+			} catch (FileNotFoundException) {
 				throw SymbolLoader.GetDiagSourceMayBeMissingException();
 			}
 			src.loadDataFromPdb(pdb_path);
 			Dia2Lib.IDiaSession _session;
 			src.openSession(out _session);
-			
+
 			return (_session.globalScope.guid, _session.globalScope.age);
 		}
 
