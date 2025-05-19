@@ -1,0 +1,55 @@
+<Window x:Class="ProductionStackTrace.Analyze.WPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ProductionStackTrace.Analyze.WPF" xmlns:vm="clr-namespace:ProductionStackTrace.Analyze.WPF.ViewModels" xmlns:term="clr-namespace:EasyWindowsTerminalControl;assembly=EasyWindowsTerminalControl"
+		mc:Ignorable="d"
+        Title="Production Stack Trace Analyzer" Height="450" Width="800" Icon="/icon.png">
+	<Window.DataContext>
+		<vm:MainViewModel/>
+	</Window.DataContext>
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition/>
+		</Grid.RowDefinitions>
+		<Grid>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="Auto"/>
+				<ColumnDefinition/>
+			</Grid.ColumnDefinitions>
+			<StackPanel Orientation="Horizontal">
+				<RadioButton GroupName="Mode" Content="UI Mode" IsChecked="{Binding ModeUI}" Margin="5"/>
+				<RadioButton GroupName="Mode" Content="Terminal Mode" IsChecked="{Binding ModeTerminal}" Margin="5"/>
+				<TextBlock Text="Additional Symbol/Nuget Package Paths (semicolon separated):" VerticalAlignment="Center" Margin="5" />
+			</StackPanel>
+			<TextBox Text="{Binding SymbolPaths}"  Grid.Column="1" Margin="5" />
+		</Grid>
+		<Grid  Grid.Row="1" Visibility="{Binding ModeTerminalVisible}">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto" />
+				<RowDefinition />
+			</Grid.RowDefinitions>
+			<StackPanel Orientation="Horizontal">
+				<Button Content="Restart" Command="{Binding CLIRestartCmd}" Margin="5" />
+				<Button Content="Clear" Command="{Binding CLIClearCmd}" Margin="5" />
+			</StackPanel>
+			<term:EasyTerminalControl x:Name="easyTerm" StartupCommandLine="{Binding TermCmdLine}" Grid.Row="1" />
+		</Grid>
+		<Grid  Grid.Row="1" Visibility="{Binding ModeUIVisible}">
+			<Grid.RowDefinitions>
+				<RowDefinition MaxHeight="300" />
+				<RowDefinition />
+			</Grid.RowDefinitions>
+			<GroupBox Header="Input Log/Stacktrace"  Margin="5">
+				
+			<TextBox Text="{Binding input}" AcceptsReturn="True"  />
+			</GroupBox>
+			<TextBox Text="{Binding output}" AcceptsReturn="True"  IsReadOnly="True"  IsReadOnlyCaretVisible="True" Margin="5" Background="#FFF3F3F3" Grid.Row="1" />
+		</Grid>
+
+
+
+	</Grid>
+</Window>

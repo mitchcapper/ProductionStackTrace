@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ProductionStackTrace.Analyze.WPF": {
+      "commandName": "Project",
+      "commandLineArgs": "-s c:\\save\\nuget"
+    }
+  }
+}

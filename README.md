@@ -64,6 +64,10 @@ When analyzing the retrieved logs, it helps to have the Symbol Server path confi
 
 ## Analyzing
 
+### WPF Analyzer App
+A WPF wrapper around the console tool that allows for both console mode (direct interaction with the normal console tool) or a more standard UI experience where you can paste the input to the convert in the input box and the output box will show the analyzed stack.   This relies on EasyWindowsTerminalControl](https://github.com/mitchcapper/EasyWindowsTerminalControl) for the console control.
+
+### Console Analyzer
 Analyzing these stack traces is simple with an associated _analyzer_ application.
 
 1. Install the **ProductionStackTrace Analyze Tool** [NuGet package](https://www.nuget.org/packages/ProductionStackTrace.Analyze.Console) - it's a solution-level tools package:
