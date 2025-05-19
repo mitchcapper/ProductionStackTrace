@@ -120,10 +120,10 @@ namespace ProductionStackTrace.Analyze {
 				} catch (FileNotFoundException) { }
 
 			}
-			throw GetDiagSourceMayBeMissingException();
+			throw GetDiagSourceMayBeMissingException("None of the msdiag GUID's we know were found, ie msdia140.dll registered from VS 2022");
 		}
-		public static Exception GetDiagSourceMayBeMissingException() {
-			throw new Exception($"Unable to create instance of DiaSource you likely need to run regsvr32 as admin on the path to msdia140.dll like: regsvr32 \"{GetSuggestedDiaLocation()}\"");
+		public static Exception GetDiagSourceMayBeMissingException(String msg) {
+			throw new Exception($"Unable to create instance of DiaSource you likely need to run regsvr32 as admin on the path to msdia140.dll like: regsvr32 \"{GetSuggestedDiaLocation()}\" actual error: {msg}");
 		}
 		public static string GetSuggestedDiaLocation() {
 			var dia_paths = new[] { @"DIA SDK\bin\amd64\", @"Common7\ide\", @"DIA SDK\bin\" };

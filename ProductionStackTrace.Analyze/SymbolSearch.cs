@@ -141,8 +141,10 @@ namespace ProductionStackTrace.Analyze {
 			Dia2Lib.IDiaDataSource src = null;
 			try {
 				src = new Dia2Lib.DiaSource();
-			} catch (FileNotFoundException) {
-				throw SymbolLoader.GetDiagSourceMayBeMissingException();
+			} catch (COMException c) {
+				throw SymbolLoader.GetDiagSourceMayBeMissingException(c.Message);
+			} catch (FileNotFoundException f) {
+				throw SymbolLoader.GetDiagSourceMayBeMissingException(f.FileName);
 			}
 			src.loadDataFromPdb(pdb_path);
 			Dia2Lib.IDiaSession _session;
