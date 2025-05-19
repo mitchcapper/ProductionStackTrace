@@ -1,7 +1,7 @@
 # ProductionStackTrace
 
 ## Fork notes
-This is the unofficial fork/continuation of: https://github.com/gimelfarb/ProductionStackTrace it no longer shows as a fork as github treats true forks as third class citizens and the original project does seem dead.  I am not publishing any nuget packages currently, but you can download from the latest compiled builds at: https://github.com/mitchcapper/ProductionStackTrace/actions/workflows/continuous.yml
+This is the unofficial fork/continuation of: https://github.com/gimelfarb/ProductionStackTrace it no longer shows as a fork as github treats true forks as third class citizens and the original project does seem dead.  I am not publishing any nuget packages currently, but you can download from the latest compiled builds at: https://github.com/mitchcapper/ProductionStackTrace/actions/workflows/continuous.yml or from our [Releases](https://github.com/mitchcapper/ProductionStackTrace/releases).
 
 
 # Summary

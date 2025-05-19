@@ -99,9 +99,13 @@ class Build : NukeBuild {
 		.Executes(() => {
 			OutputDirectory.CreateOrCleanDirectory();
 
-			var toBuild = new[] { Solution.ProductionStackTrace, Solution.ProductionStackTraceStd, Solution.ProductionStackTrace_Analyze, Solution.ProductionStackTrace_Analyze_Console };
+			var toBuild = new[] { Solution.ProductionStackTrace, Solution.ProductionStackTraceStd, Solution.ProductionStackTrace_Analyze, Solution.ProductionStackTrace_Analyze_Console, Solution.ProductionStackTrace_Analyze_WPF };
 			foreach (var proj in toBuild) {
-				var OutDir = proj == Solution.ProductionStackTrace_Analyze_Console ? OutputDirectory / "console" : OutputDirectory / "test";
+				var OutDir =  OutputDirectory / "test";
+				if (proj == Solution.ProductionStackTrace_Analyze_Console)
+					OutDir = OutputDirectory / "console";
+				else if (proj == Solution.ProductionStackTrace_Analyze_WPF)
+					OutDir = OutputDirectory / "wpf";
 				var context = Serilog.Log.ForContext("Project", $"Building {proj.Name}");
 				context.Information($"Starting build of: {proj.Name}");
 				OurMSBuild(s => s
