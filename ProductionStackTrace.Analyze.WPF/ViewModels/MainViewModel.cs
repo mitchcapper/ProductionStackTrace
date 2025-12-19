@@ -48,6 +48,17 @@ namespace ProductionStackTrace.Analyze.WPF.ViewModels {
 		private string _input;
 
 
+		// implementing colorization for stringified exceptions would be a pain as we manually reconstruct the entire line rather than use the serialized options
+		public bool Colorize {
+			get => field;
+			set {
+				if (Set(ref field, value))
+					ConvertInput();
+			}
+		}
+		
+
+
 		public string SymbolPaths {
 			get => _SymbolPaths;
 			set {
@@ -62,6 +73,11 @@ namespace ProductionStackTrace.Analyze.WPF.ViewModels {
 			CLIArgs = "";
 			if (paths.Any()) {
 				CLIArgs += String.Join(" ", paths.Select(p => $"-s \"{p}\""));
+			}
+			if (Colorize) {
+				if (!String.IsNullOrWhiteSpace(CLIArgs))
+					CLIArgs += " ";
+				CLIArgs += "-c";
 			}
 			TermCmdLine = ExecPath + (String.IsNullOrWhiteSpace(CLIArgs) ? "" : " " + CLIArgs);
 			if (ModeTerminal)

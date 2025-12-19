@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.13.35507.96
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11310.294 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProductionStackTrace", "ProductionStackTrace\ProductionStackTrace.csproj", "{6F8A759B-6096-468E-A370-09C9785D673C}"
 EndProject
@@ -24,6 +24,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{36344849-4E83-4CE3-A067-5897DCF2F751}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProductionStackTrace.Analyze.WPF", "ProductionStackTrace.Analyze.WPF\ProductionStackTrace.Analyze.WPF.csproj", "{C6B628A6-94AD-4FB7-B82F-CB4F29170669}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThrowExceptionExample", "ThrowExceptionExample\ThrowExceptionExample.csproj", "{3EE16544-7BF2-43A6-B757-0810E5445D6C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pillar.Demystifier", "..\Pillar.Demystifier\src\Pillar.Demystifier\Pillar.Demystifier.csproj", "{D2045B0A-64E4-8498-2FBA-9CED0DA44275}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,6 +65,14 @@ Global
 		{C6B628A6-94AD-4FB7-B82F-CB4F29170669}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6B628A6-94AD-4FB7-B82F-CB4F29170669}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6B628A6-94AD-4FB7-B82F-CB4F29170669}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3EE16544-7BF2-43A6-B757-0810E5445D6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3EE16544-7BF2-43A6-B757-0810E5445D6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3EE16544-7BF2-43A6-B757-0810E5445D6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3EE16544-7BF2-43A6-B757-0810E5445D6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2045B0A-64E4-8498-2FBA-9CED0DA44275}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2045B0A-64E4-8498-2FBA-9CED0DA44275}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2045B0A-64E4-8498-2FBA-9CED0DA44275}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2045B0A-64E4-8498-2FBA-9CED0DA44275}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

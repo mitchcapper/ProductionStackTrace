@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -12,7 +12,8 @@ namespace ProductionStackTrace {
 	public class LogStackTrace {
 		public IEnumerable<LogStackFrame> StackFrames;
 		public override string ToString() { var sb = new StringBuilder(0xff); ToString(sb); return sb.ToString(); }
-		public void ToString(StringBuilder builder) {
+		public void ToString(StringBuilder builder) => ToString(new StringBuilderProxy(builder));
+		internal void ToString(IBuilderProxy builder) {
 			bool isFirstLine = true;
 			foreach (var frame in StackFrames) {
 				if (isFirstLine) {
@@ -40,7 +41,10 @@ namespace ProductionStackTrace {
 			IlOffset = frame.GetILOffset();
 			SourceFileName = frame.GetFileName();
 			SourceFileLine = frame.GetFileLineNumber();
-			MethodInfo = frame.MethodInfo.ToString();
+			if (ExceptionReporting.SerializeMethodArgs) 
+				RawMethodInfo = frame.MethodInfo;
+			else
+				MethodInfo = frame.MethodInfo.ToString();
 			IsLastFrameFromForeignExceptionStackTrace = ExceptionReporting.GetIsLastFrameFromForeignExceptionStackTrace(frame);
 		}
 		private int GetMetadataToken(System.Reflection.MethodBase method_info) {
@@ -51,19 +55,21 @@ namespace ProductionStackTrace {
 			}
 		}
 		public override string ToString() { var sb = new StringBuilder(0xff); ToString(sb); return sb.ToString(); }
-		public void ToString(StringBuilder builder) {
+		public void ToString(StringBuilder builder) => ToString(new StringBuilderProxy(builder));
+		internal void ToString(IBuilderProxy builder) {
 			var strAt = ExceptionReporting.GetRuntimeResourceString("Word_At") ?? "at";
 			var method = from_raw ? frame.GetMethod() : null;
-			builder.AppendFormat(CultureInfo.InvariantCulture, "   {0} ", new object[] { strAt });
-			var no_file_info = String.IsNullOrWhiteSpace(SourceFileName);
+			builder.Append($"   {strAt} ");
+			var filename = SourceFileName ?? (from_raw ? frame.GetFileName() : null);
+			var no_file_info = String.IsNullOrWhiteSpace(filename);
 			if (no_file_info) {
 				builder.Append(ShortAssemblyName);
 				builder.Append("!");
-				builder.AppendFormat("0x{0:x8}", from_raw ? GetMetadataToken(method) : MethodMetadataToken);
+				builder.Append($"0x{(from_raw ? GetMetadataToken(method) : MethodMetadataToken):x8}");
 				builder.Append("!");
 			}
-			if (from_raw)
-				frame.MethodInfo.Append(builder); //will require a PR approved before we can use
+			if (from_raw || RawMethodInfo != null)
+				builder.AppendMethodInfo(RawMethodInfo ?? frame.MethodInfo);
 			else
 				builder.Append(MethodInfo);
 
@@ -72,10 +78,10 @@ namespace ProductionStackTrace {
 				if (ilOffset != -1) {
 					// Output the IL Offset, which we can later map to a filename+line,
 					// using information inside a matching PDB file
-					builder.AppendFormat(CultureInfo.InvariantCulture, " +0x{0:x}", ilOffset);
+					builder.Append($" +0x{ilOffset:x}");
 				}
 			} else
-				builder.Append($" in {(from_raw ? frame.GetFileName() : SourceFileName)}:line {(from_raw ? frame.GetFileLineNumber() : SourceFileLine)}");
+				builder.AppendFilename(filename, from_raw ? frame.GetFileLineNumber() : SourceFileLine);
 
 
 			if (from_raw ? ExceptionReporting.GetIsLastFrameFromForeignExceptionStackTrace(frame) : IsLastFrameFromForeignExceptionStackTrace) {
@@ -85,18 +91,19 @@ namespace ProductionStackTrace {
 			}
 
 		}
-		public int MethodMetadataToken;
-		public string ShortAssemblyName;
-		public string MethodInfo;
-		public string SourceFileName;
-		public int SourceFileLine;
-		public int IlOffset;
-		public bool IsLastFrameFromForeignExceptionStackTrace;
+		public int MethodMetadataToken { get; set; }
+		public string ShortAssemblyName { get; set; }
+		public ResolvedMethod RawMethodInfo {get;set; }
+		public string MethodInfo { get; set; }
+		public string SourceFileName { get; set; }
+		public int SourceFileLine { get; set; }
+		public int IlOffset { get; set; }
+		public bool IsLastFrameFromForeignExceptionStackTrace { get; set; }
 		private bool from_raw;
 	}
 	public class LogExceptionReport {
-		public Type Type;
-		public string Message;
+		public Type Type { get; set; }
+		public string Message { get; set; }
 
 		public void LoadObjectPropertiesFromRaw() {
 			foreach (var frame in StackTrace.StackFrames)
@@ -108,14 +115,22 @@ namespace ProductionStackTrace {
 			InnerException?.LoadObjectPropertiesFromRaw();
 
 		}
-		public LogStackTrace StackTrace;
-		public LogExceptionReport InnerException;
-		public LogAssemblyInfo[] AssemblyInfo;
+		public LogStackTrace StackTrace { get; set; }
+		public LogExceptionReport InnerException { get; set; }
+		public LogAssemblyInfo[] AssemblyInfo { get; set; }
 		public override string ToString() { var sb = new StringBuilder(0xff); ToString(sb); return sb.ToString(); }
-		public void ToString(StringBuilder builder) {
+		public void ToString(StringBuilder builder) => ToString(new StringBuilderProxy(builder));
+		public string ToString(Pillar.Demystifier.StyledBuilderOption option) {
+			var sb = new StyledBuilderProxy(new Pillar.Demystifier.StyledBuilder(), option);
+			ToString(sb);
+			return sb.ToString();
+		}
+		public string ToString(bool Colorize) => Colorize ? ToString(Pillar.Demystifier.StyledBuilderOption.GlobalOption) : ToString();
+
+		internal void ToString(IBuilderProxy builder) {
 			builder.Append(Type.ToString());
 			if (!string.IsNullOrEmpty(Message))
-				builder.Append(": ").Append(Message);
+				builder.Append(": ").AppendMessage(Message);
 
 			if (InnerException != null) {
 				builder.Append(" ---> ");
@@ -143,13 +158,13 @@ namespace ProductionStackTrace {
 			this.info = info;
 			from_raw = true;
 		}
-		public string ShortName;//may have an incrementer at end if multiple assemblies with same short name
-		public string OrigShortName;
-		public string AssemblyFullName;
-		public uint Age;
-		public Guid Guid;
-		public string PdbFileName;
-		public bool DebugInfoPresent;
+		public string ShortName { get; set; }//may have an incrementer at end if multiple assemblies with same short name
+		public string OrigShortName { get; set; }
+		public string AssemblyFullName { get; set; }
+		public uint Age { get; set; }
+		public Guid Guid { get; set; }
+		public string PdbFileName { get; set; }
+		public bool DebugInfoPresent { get; set; }
 		private ExceptionReporting.AssemblyReportInfo info;
 		private bool from_raw;
 		public void LoadObjectPropertiesFromRaw() {
@@ -166,11 +181,12 @@ namespace ProductionStackTrace {
 			}
 		}
 		public override string ToString() { var sb = new StringBuilder(0xff); ToString(sb); return sb.ToString(); }
-		public void ToString(StringBuilder builder) {
+		public void ToString(StringBuilder builder) => ToString(new StringBuilderProxy(builder));
+		internal void ToString(IBuilderProxy builder) {
 
-			builder.AppendFormat("MODULE: {0} => {1};", ShortName, from_raw ? info.Assembly.FullName : AssemblyFullName);
+			builder.Append($"MODULE: {ShortName} => {(from_raw ? info.Assembly.FullName : AssemblyFullName)};");
 			if ((from_raw ? info.DebugInfo != null : DebugInfoPresent)) {
-				builder.AppendFormat(" G:{0:N}; A:{1}", from_raw ? info.DebugInfo.Guid : Guid, from_raw ? info.DebugInfo.Age : Age);
+				builder.Append($" G:{(from_raw ? info.DebugInfo.Guid : Guid):N}; A:{(from_raw ? info.DebugInfo.Age : Age)}");
 
 				var pdbFileName = from_raw ? info.DebugInfo.Path : PdbFileName;
 				var pos = pdbFileName.LastIndexOfAny(new[] { '\\', '/' });

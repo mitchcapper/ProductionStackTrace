@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using Pillar.Demystifier;
 using ProductionStackTrace.Internals;
 
 namespace ProductionStackTrace {
@@ -19,9 +20,9 @@ namespace ProductionStackTrace {
 		/// </summary>
 		/// <param name="ex"></param>
 		/// <returns></returns>
-		public static string GetExceptionReport(Exception ex) {
-			return GetExceptionReportObject(ex).ToString();
-		}
+		public static string GetExceptionReport(Exception ex, bool Colorize) => GetExceptionReportObject(ex).ToString(Colorize);
+		public static string GetExceptionReport(Exception ex, StyledBuilderOption option) => GetExceptionReportObject(ex).ToString(option);
+		public static string GetExceptionReport(Exception ex) => GetExceptionReport(ex, false);
 		/// <summary>
 		/// Produce a production style stack trace containing necessary
 		/// info to recreate full line-mapping with symbols.
@@ -196,6 +197,12 @@ namespace ProductionStackTrace {
 		public delegate IntPtr MarshalGetHINSTANCEDel(Module module);
 
 		public static MarshalGetHINSTANCEDel MarshalGetHINSTANCE = MarshalGetHINSTANCEDefault;
+
+
+		/// <summary>
+		/// Set to true we will serialize our entire extracted MethodInfo rather than just the method string
+		/// </summary>
+		public static bool SerializeMethodArgs { get; set; }
 
 		internal static IntPtr MarshalGetHINSTANCEDefault(Module module) {//doesn't exist until dotnet 2.1
 			var type = typeof(System.Runtime.InteropServices.Marshal);

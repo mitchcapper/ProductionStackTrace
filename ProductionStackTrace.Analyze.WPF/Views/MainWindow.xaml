@@ -22,6 +22,7 @@
 			<StackPanel Orientation="Horizontal">
 				<RadioButton GroupName="Mode" Content="UI Mode" IsChecked="{Binding ModeUI}" Margin="5"/>
 				<RadioButton GroupName="Mode" Content="Terminal Mode" IsChecked="{Binding ModeTerminal}" Margin="5"/>
+				<!--<CheckBox Content="Colorize" IsChecked="{Binding ModeTerminal, Mode=TwoWay}" IsEnabled="{Binding ModeTerminal}" VerticalAlignment="Center" Margin="5" />-->
 				<TextBlock Text="Additional Symbol/Nuget Package Paths (semicolon separated):" VerticalAlignment="Center" Margin="5" />
 			</StackPanel>
 			<TextBox Text="{Binding SymbolPaths}"  Grid.Column="1" Margin="5" />

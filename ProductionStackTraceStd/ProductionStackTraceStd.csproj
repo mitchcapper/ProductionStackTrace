@@ -1,11 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>1.0.30</Version>
+    <TargetFrameworks>netstandard2.0;net472;net480;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <Version>1.0.53</Version>
+		<LangVersion>preview</LangVersion>
+  </PropertyGroup>
+	<PropertyGroup>
+
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\ProductionStackTrace\BuilderProxy.cs" Link="BuilderProxy.cs" />
     <Compile Include="..\ProductionStackTrace\ExceptionEx.cs" Link="ExceptionEx.cs" />
     <Compile Include="..\ProductionStackTrace\ExceptionReporting.cs" Link="ExceptionReporting.cs" />
     <Compile Include="..\ProductionStackTrace\Internals\AssemblyDebugInfo.cs" Link="Internals\AssemblyDebugInfo.cs" />
@@ -18,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Ben.Demystifier" Version="0.4.1" />
+    <ProjectReference Include="..\..\Pillar.Demystifier\src\Pillar.Demystifier\Pillar.Demystifier.csproj" />
   </ItemGroup>
 
 </Project>
