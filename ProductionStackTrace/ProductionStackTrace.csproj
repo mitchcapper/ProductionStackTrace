@@ -6,6 +6,7 @@
     <PackageOutputDir>bin\$(Configuration)</PackageOutputDir>
     <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<LangVersion>preview</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\CommonAssemblyInfo.cs">
@@ -13,15 +14,8 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Ben.Demystifier">
-      <Version>0.4.1</Version>
-    </PackageReference>
+		<PackageReference Include="MoeDotKawayi.Pillar.Demystifier" Version="0.4.1" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="System.Memory">
-      <Version>4.5.5</Version>
-    </PackageReference>
-    <PackageReference Include="System.Reflection.Metadata">
-      <Version>6.0.1</Version>
-    </PackageReference>
+
   </ItemGroup>
 </Project>
